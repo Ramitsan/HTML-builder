@@ -10,7 +10,7 @@ let readableStream = fs.createReadStream(filePath, 'utf-8');
 let data = '';
 readableStream.on('data', chunk => console.log(data += chunk));
 
-// При возникновении ошибки будет сгенерировано событие error
+// При возникновении ошибки (например, неправильное имя файла) будет сгенерировано событие error
 readableStream.on('error', error => console.log('Error', error.message));
 
 // Также у потока чтения есть событие 'end'. Это событие срабатывает, когда все данные уже переданы.
