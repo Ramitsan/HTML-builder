@@ -23,7 +23,7 @@ const fileHandler = () => {
         data = data.toString('utf-8').trim();
 
         if (data === 'exit') {
-            stdout.write(finalMessage);
+            console.log(finalMessage);
             process.exit();
 
         } else {
