@@ -11,27 +11,39 @@ async function getInfoAboutFiles() {
     // withFileTypes: true в дальнейшем позволит узнать тип элемента (папка или файл) 
     const files = await readdir(dirPath, { withFileTypes: true });
 
-    files.forEach(file => {
+    for (const file of files) {
         const { name } = file;
         const filePath = path.join(dirPath, name);
 
         if (file.isFile()) {
-            stat(filePath, (err, file) => {
-                if (err) return console.log(err.message);
+            await new Promise((res, rej) => {
+                stat(filePath, (err, file) => {
+                    try {
+                        if (err) throw err;
 
-                const fileName = name.split('.')[0];
-                const fileExtension = path.extname(filePath).slice(1);
-                const fileSize = file.size;
+                        const fileName = name.split('.')[0];
+                        const fileExtension = path.extname(filePath).slice(1);
+                        const fileSize = file.size;
 
-                return console.log(`${fileName} - ${fileExtension} - ${fileSize} b`);
+                        console.log(`${fileName} - ${fileExtension} - ${fileSize} b`);
+                        res(null);
+                    }
+                    catch (err) {
+                        rej(err);
+                    }
+                })
             })
         }
-    })
+    }
+
 }
 
-
-try {
-    getInfoAboutFiles();
-} catch (err) {
-    console.log(err.message);
+async function start() {
+    try {
+        await getInfoAboutFiles();
+    } catch (err) {
+        console.log(err.message);
+    }
 }
+
+start().then(() => { console.log('ok') });
