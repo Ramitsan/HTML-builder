@@ -21,10 +21,10 @@ async function copyDir(dirPath, dirPathCopy) {
     for (const file of files) {
         const { name } = file;
 
-        const currentFile = path.join(dirPath, name);
-        const copyFile2 = path.join(dirPathCopy, name);
+        const currentFilePath = path.join(dirPath, name);
+        const copyFilePath = path.join(dirPathCopy, name);
 
-        await copyFile(currentFile, copyFile2);
+        await copyFile(currentFilePath, copyFilePath);
     }
 }
 
