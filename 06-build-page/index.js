@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { readdir, mkdir, readFile, appendFile, copyFile, writeFile } = require('fs/promises');
+const { open, readdir, mkdir, readFile, appendFile, copyFile, writeFile } = require('fs/promises');
 
 // папка проекта
 const projectDirName = 'project-dist';
@@ -28,22 +28,18 @@ const componentsDirPath = path.join(__dirname, componentsDirName);
 const indexHtmlFileName = 'index.html';
 const indexHtmlFilePath = path.join(__dirname, projectDirName, indexHtmlFileName);
 
-function errorHandler(err) {
-    if (err) return console.log(err.message);
-}
-
 // Создаём папку project-dist
 async function createProjectDist() {
-    await mkdir(projectDirPath, { recursive: true }, errorHandler);
+    await mkdir(projectDirPath, { recursive: true });
 }
 
 // функция для копирования вложенных директорий
 async function copyDir(currentDir, newDir) {
-    await mkdir(newDir, { recursive: true }, errorHandler);
+    await mkdir(newDir, { recursive: true });
 
     // если есть вложенные файлы
     // считываем файлы из исходной директории и копируем в новую
-    const files = await readdir(currentDir, { withFileTypes: true }, errorHandler);
+    const files = await readdir(currentDir, { withFileTypes: true });
 
     for (const file of files) {
         const { name } = file;
@@ -60,8 +56,8 @@ async function copyDir(currentDir, newDir) {
 async function createStyleFile() {
     // метод fs.open() используется для создания нового файла
     // флаг w означает, что мы хотим открыть файл для записи
-    fs.open(bundleStylesFilePath, 'w', errorHandler);
-
+    await open(bundleStylesFilePath, 'w');
+  
     const files = await readdir(originalStylesDirPath, { withFileTypes: true });
 
     for (const file of files) {
@@ -69,8 +65,11 @@ async function createStyleFile() {
         const filePath = path.join(originalStylesDirPath, name);
 
         if (file.isFile() && path.extname(filePath) === '.css') {
-            const data = await readFile(filePath, 'utf-8', errorHandler);
-            await appendFile(bundleStylesFilePath, data, errorHandler);
+            let data = await readFile(filePath, 'utf-8');
+
+            if(data[data.length-1] != '\n') data += '\n';
+           
+            await appendFile(bundleStylesFilePath, data);
         }
     }
 }
@@ -78,10 +77,10 @@ async function createStyleFile() {
 // Копируем папку assets в project-dist/assets
 async function copyAssetsDir() {
     // в папке project-dist создаем директорию assets
-    await mkdir(copyAssetsDirPath, { recursive: true }, errorHandler);
-
+    await mkdir(copyAssetsDirPath, { recursive: true });
+  
     // считываем файлы из исходной директории и копируем в новую
-    const files = await readdir(originalAssetsDirPath, { withFileTypes: true }, errorHandler);
+    const files = await readdir(originalAssetsDirPath, { withFileTypes: true });
 
     for (const file of files) {
         const { name } = file;
@@ -89,33 +88,34 @@ async function copyAssetsDir() {
         const currentFilePath = path.join(originalAssetsDirPath, name);
         const copyFilePath = path.join(copyAssetsDirPath, name);
 
-        if (file.isDirectory()) {
-            await copyDir(currentFilePath, copyFilePath, errorHandler);
+        if (file.isDirectory()) {       
+            await copyDir(currentFilePath, copyFilePath);
         } else {
-            await copyFile(currentFilePath, copyFilePath, errorHandler);
+            await copyFile(currentFilePath, copyFilePath);
         }
     }
 }
 
 // создаем index.html и копируем в него разметку из компонентов
 async function createIndexHtml() {
-    const files = await readdir(__dirname, { withFileTypes: true }, errorHandler);
-
+    const files = await readdir(__dirname, { withFileTypes: true });
+   
     for (const file of files) {
         const { name } = file;
         const filePath = path.join(__dirname, name);
         
         if (file.isFile() && path.extname(filePath) === '.html') {
             // копируем содержимое template.html в index.html
-            const data = await readFile(filePath, 'utf-8', errorHandler);
-            await appendFile(indexHtmlFilePath, data, errorHandler);
+            const data = await readFile(filePath, 'utf-8');
+      
+            await writeFile(indexHtmlFilePath, data);
         }
     }
 
     // находим компоненты и добавляем их в разметку index.html
-    const components = await readdir(componentsDirPath, errorHandler);
+    const components = await readdir(componentsDirPath);
     let template = await readFile(indexHtmlFilePath, 'utf8');
-
+ 
     for (let component of components) {
         const componentFilePath = path.join(componentsDirPath, component);
     
@@ -126,7 +126,7 @@ async function createIndexHtml() {
         let data = await readFile(componentFilePath, 'utf-8');        
         template = template.replace(`{{${componentName}}}`, data);    
     }
-
+ 
     // записываем информацию в index.html
     const stream = fs.createWriteStream(indexHtmlFilePath);
     stream.write(template, 'utf-8');
